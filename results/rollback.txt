@@ -1,0 +1,7 @@
+# Rollback via kubectl rollout undo
+t+4s: X-Model-Version=v2
+t+8s: X-Model-Version=v2
+t+12s: X-Model-Version=v2
+t+16s: X-Model-Version=v1
+>>> rolled back to v1
+deployment "command-parser" successfully rolled out

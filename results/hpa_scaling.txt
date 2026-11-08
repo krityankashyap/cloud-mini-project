@@ -1,0 +1,3 @@
+# HPA scale-up 1->2 under load
+t+5s: cpu=551%/70% replicas=2 ready_pods=2
+>>> scaled to 2 ready replicas

@@ -1,0 +1,8 @@
+# Rolling update v1 -> v2 under load (maxUnavailable=0)
+trigger: set MODEL_VERSION=v2, MODEL_URI=s3://models/v2
+t+4s: X-Model-Version=v1
+t+8s: X-Model-Version=v1
+t+12s: X-Model-Version=v2
+>>> rollout to v2 complete
+--- rollout status ---
+deployment "command-parser" successfully rolled out

@@ -1,0 +1,4 @@
+# Recovery: delete one pod under load, confirm replica count restored
+deleting pod: command-parser-798bd5647c-j2zqz
+t+5s: pods=2 ready=2
+>>> replica count restored to 2 ready
