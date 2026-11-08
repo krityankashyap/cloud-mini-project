@@ -9,13 +9,13 @@ max_train_records: 1500               # project cap: no more than 1,500 training
 seed: 42
 learning_rate: 0.0005
 batch_size: 8
-epochs: 3
+epochs: 6          # 6 epochs needed for the 70M student to reliably emit valid 4-key JSON (>=95%)
 max_seq_length: 128
 
-# --- v2: a second version for Task 4 (another seed + one more epoch) ---
+# --- v2: a second version for Task 4 (another seed + more epochs) ---
 v2:
   seed: 123
-  epochs: 4
+  epochs: 8
 
 # --- pinned library versions (must match training/requirements.txt) ---
 library_versions:
