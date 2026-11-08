@@ -14,12 +14,16 @@ CLUSTER      := cloud-mini
 PYTHON       ?= python3
 VENV         := .venv
 VENV_PY      := $(VENV)/bin/python
-TRAIN_PY     ?= python3.11          # interpreter used to build the training venv (needs 3.11)
+# TRAIN_PY: interpreter used to build the training venv (needs Python 3.11)
+TRAIN_PY     ?= python3.11
+# TOOLVENV: host-side venv for the S3 helper scripts (boto3)
+TOOLVENV     := .toolvenv
+TOOL_PY      := $(TOOLVENV)/bin/python
 SUBSET       ?=
 NS_DATA      := data
 
 .PHONY: help up down cluster cluster-delete images secrets storage wait-storage \
-        buckets deploy-app label clean-data venv train train-v2 \
+        buckets deploy-app label clean-data venv toolvenv train train-v2 \
         predict-student predict-untrained score-all port-forward-% nacl test lint
 
 help:
@@ -55,6 +59,11 @@ storage:   ## Deploy SeaweedFS in namespace data
 wait-storage:
 	kubectl -n $(NS_DATA) rollout status deploy/seaweedfs --timeout=180s
 
+toolvenv:   ## Create the host-side venv (boto3) used by the S3 helper scripts
+	@test -d $(TOOLVENV) || $(PYTHON) -m venv $(TOOLVENV)
+	@$(TOOL_PY) -m pip install -q --upgrade pip
+	@$(TOOL_PY) -m pip install -q boto3==1.34.162
+
 # Run a command with a background port-forward to the SeaweedFS S3 port.
 # usage: $(call with_s3, <commands>)
 define with_s3
@@ -65,14 +74,14 @@ define with_s3
 	$(1)
 endef
 
-buckets:   ## Create datasets + models buckets and upload commands_pool.jsonl
+buckets: toolvenv   ## Create datasets + models buckets and upload commands_pool.jsonl
 	@$(call with_s3, \
-	  $(PYTHON) scripts/storage.py create-buckets datasets models; \
-	  $(PYTHON) scripts/storage.py upload-file data/commands_pool.jsonl datasets commands_pool.jsonl)
+	  $(TOOL_PY) scripts/storage.py create-buckets datasets models; \
+	  $(TOOL_PY) scripts/storage.py upload-file data/commands_pool.jsonl datasets commands_pool.jsonl)
 
-upload-model:   ## Upload a local model dir to object storage. usage: make upload-model DIR=training/artifacts/v1 VER=v1
+upload-model: toolvenv   ## Upload a local model dir to object storage. usage: make upload-model DIR=training/artifacts/v1 VER=v1
 	@test -n "$(DIR)" || (echo "set DIR=training/artifacts/v1"; exit 1)
-	@$(call with_s3, $(PYTHON) scripts/storage.py upload-dir $(DIR) models $(or $(VER),v1))
+	@$(call with_s3, $(TOOL_PY) scripts/storage.py upload-dir $(DIR) models $(or $(VER),v1))
 
 deploy-app:   ## Deploy the service: Deployment, Service, Ingress, HPA
 	kubectl apply -f k8s/app/deployment.yaml
@@ -83,8 +92,8 @@ deploy-app:   ## Deploy the service: Deployment, Service, Ingress, HPA
 label:   ## Run the two teacher-labelling worker Jobs (Task 1)
 	kubectl apply -f k8s/pipeline/workers.yaml
 
-clean-data:   ## Run clean.py against the shard outputs in object storage
-	@$(call with_s3, $(PYTHON) worker/clean.py)
+clean-data: toolvenv   ## Run clean.py against the shard outputs in object storage
+	@$(call with_s3, $(TOOL_PY) worker/clean.py)
 
 # ---------------------------------------------------------------------------
 # Training (Task 2)

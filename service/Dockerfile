@@ -18,6 +18,7 @@ RUN pip install --no-cache-dir -r /app/requirements.txt
 
 # Application code + the schema used for output validation. NO model weights.
 COPY service/app.py /app/app.py
+COPY service/validation.py /app/validation.py
 COPY data/schema.json /app/schema.json
 
 EXPOSE 8000
