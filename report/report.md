@@ -19,24 +19,31 @@ distillation targets to fine-tune **pythia-70m**. The student is stored in
 - **Sharding.** Command at line `L` (from 0) → shard `L % SHARD_COUNT`. Two workers
   (SHARD_INDEX 0,1; SHARD_COUNT 2) write `datasets/teacher/shard-{0,1}.jsonl`. This
   guarantees a disjoint, exhaustive partition (unit test `test_sharding...`).
-- **Cleaning counts** (from `make clean-data`):
+- **Cleaning counts** (from `make clean-data`, full 3,000):
 
   | input | (a) invalid JSON | (b) wrong keys | (c) bad intent | (d) bad slot | duplicates | kept |
   |-------|------------------|----------------|----------------|--------------|------------|------|
-  | MEASURED | MEASURED | MEASURED | MEASURED | MEASURED | MEASURED | MEASURED |
+  | 3000 | 6 | 2 | 11 | 61 | 49 | 2871 |
 
-  Reconciles: `input = (a)+(b)+(c)+(d)+duplicates+kept`. `train.sha256` = MEASURED.
+  Reconciles: `3000 = 6+2+11+61+49+2871`. `train.sha256` =
+  `c5d6c2507849a0649f1bc6fc0d0de681e881e8dcd285a96707d14d7b88004f1e`
+  (reproducible offline: `python worker/clean.py --local-shards datasets/teacher ...`).
+  Labelling ran as two in-cluster Jobs (SHARD_INDEX 0/1, SHARD_COUNT 2), 108 min total.
 
 ## Task 2 — Training the student
-- Config: seed 42, lr 5e-4, batch 8, epochs 3, max_seq_len 128 (`training/config.yaml`).
-- Loss per epoch (`training/loss.csv`): MEASURED.
-- **Three-model comparison** (score.py on `validation.jsonl`):
+- Config: seed 42, lr 5e-4, batch 8, **epochs 6**, max_seq_len 128 (`training/config.yaml`).
+  (3 epochs gave only 89% JSON validity; 6 epochs reaches 99%.)
+- Loss per epoch (`training/loss.csv`): 1.97, 0.42, 0.31, 0.32, 0.24, 0.20.
+- **Three-model comparison** (score.py on `validation.jsonl`, in `results/`):
 
   | Model | json_validity | intent_acc | date | time | place | full_frame |
   |-------|---------------|------------|------|------|-------|------------|
-  | Teacher (phi3.5) | MEASURED | | | | | |
-  | Untrained pythia-70m | MEASURED | | | | | |
-  | Student v1 | MEASURED | | | | | |
+  | Teacher (phi3.5) | 100 | 85 | 77 | 84 | 85 | 45 |
+  | Untrained pythia-70m | 0 | 0 | 0 | 0 | 0 | 0 |
+  | Student v1 (6 epochs) | 99 | 78 | 65 | 67 | 75 | 24 |
+
+  Student full-frame 24% ≥ half of teacher's 45% (22.5%); validity 99% ≥ 95%.
+  Distillation recovers 78/85 = 92% of the teacher's intent accuracy with a 70M model.
 
 - **Sequence-level vs logit-based distillation.** (a) Sequence-level trains on the
   teacher's *generated output text* (hard targets) — standard SFT on
@@ -50,8 +57,11 @@ distillation targets to fine-tune **pythia-70m**. The student is stored in
 ## Task 3 — Inference service
 - Endpoints `/parse`, `/healthz`, `/readyz`; headers `X-Model-Version`, `X-Served-By`.
 - `FAULT_INJECT=1` → HTTP 500 `{"error":"invalid_model_output"}` (verified).
-- Image size: MEASURED GB (CPU-only torch, no weights). Peak memory @ 1 CPU / 1 GiB
+- Image size: **1.2 GB** (CPU-only torch, no weights; ≤ 2 GB). Peak memory @ 1 CPU / 1 GiB
   over 50 sequential requests: MEASURED MiB (evidence in `results/`).
+- Verified live through the Ingress: `what is the weather in london` →
+  `{"intent":"weather_query","date":null,"time":null,"place":"london"}` with headers
+  `X-Model-Version: v1`, `X-Served-By: <pod>`.
 
 ## Task 4 — Kubernetes deployment, scaling, reliability
 - Ingress `/parse` answers; requests/limits set; no ready endpoints during model load.
