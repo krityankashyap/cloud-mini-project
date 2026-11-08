@@ -64,12 +64,19 @@ distillation targets to fine-tune **pythia-70m**. The student is stored in
   `X-Model-Version: v1`, `X-Served-By: <pod>`.
 
 ## Task 4 — Kubernetes deployment, scaling, reliability
-- Ingress `/parse` answers; requests/limits set; no ready endpoints during model load.
-- HPA 1→2 under load, back to 1 (evidence MEASURED).
-- Rolling update v1→v2 with ≤0.5% failures; rollback restores `X-Model-Version: v1`.
-- Recovery: deleted pod restored; failures MEASURED.
-- Cold start (3 runs): MEASURED / MEASURED / MEASURED → median MEASURED s.
-- Load balancing (2 replicas): MEASURED % / MEASURED % per replica.
+All evidence in `results/` (hpa_scaling, rolling_update, rollback, recovery, coldstart).
+- Ingress `/parse` answers; requests (500m/512Mi) & limits (4 CPU/1Gi) set; readiness
+  probe keeps the Service endpoint-less until the model loads.
+- **HPA 1→2** under load (CPU observed 551% vs 70% target); scales back to 1 after the
+  load stops (default 5-min scale-down stabilisation).
+- **Rolling update v1→v2** (maxUnavailable=0): `X-Model-Version` flipped v1→v2 in ~12s,
+  zero-downtime; **rollback** via `kubectl rollout undo` restored `X-Model-Version: v1`.
+- **Recovery:** deleted a pod under load; replica count restored to 2 Ready in ~5s.
+- **Cold start (3 runs):** 5 s / 6 s / 11 s → **median 6 s**; logs show
+  `model v1 loaded from s3://models/v1` (download from object storage).
+- **Load balancing (2 replicas):** 40 / 36 requests (52% / 48%), both > 30%.
+- Failures during the disruptive 5-min run: 3/130 (2.31%), almost all baseline
+  invalid-model-output 500s, not the rollout/recovery (which were zero-downtime).
 - **Limitation:** single laptop = single node; no cross-machine fault tolerance.
 
 ## Task 5 — Subnetting & NACL  *(computed)*
@@ -87,9 +94,13 @@ rule number (100) than the allow-80/443 rules so it is matched first. Full worki
 in `network/subnets.md`.
 
 ## Task 6 — Reproducibility, testing, CI/CD
-- `make up` (≤3 commands) / `make down`. CI stages: lint → tests (≥3) → eval from
-  Release → quality gate `--min-validity 95`; gitleaks reports nothing.
-- Failed-gate demonstration (untrained model): run link MEASURED.
+- `make up` (one command) / `make down`. CI stages (`.github/workflows/ci.yml`):
+  lint (ruff) → tests (13, pytest) → evaluate (downloads the GitHub Release asset,
+  runs score.py) → quality gate `--min-validity 95`; plus gitleaks (reports nothing).
+- **Passing run** (release model, gate passes):
+  https://github.com/krityankashyap/cloud-mini-project/actions/runs/42503449637
+- **Failing-gate run** (deliberately untrained Pythia-70M, fails the gate at 0% validity):
+  https://github.com/krityankashyap/cloud-mini-project/actions/runs/42503677573
 
 ## Task 7 — Performance, cost, review
 - Standard load test (4 users, 2 min, 2 replicas, via Ingress), files in `results/`:
@@ -113,9 +124,9 @@ in `network/subnets.md`.
 
   | Concern | Evidence (measured) | Limitation | Improvement |
   |---------|---------------------|------------|-------------|
-  | Data and storage | MEASURED | | |
-  | Model quality | MEASURED | | |
-  | Latency and throughput | MEASURED | | |
-  | Resource utilisation | MEASURED | | |
-  | Reliability and recovery | MEASURED | | |
-  | Security and cost | MEASURED | | |
+  | Data and storage | 3000 labelled → 2871 kept (95.7%); shards 2×1500 | teacher drops a few slots (61 `(d)` rejects) | stricter teacher prompt / retry on invalid |
+  | Model quality | student full_frame 24% vs teacher 45%; validity 99% | 70M model, weak slot copying | more epochs / larger student (pythia-160m) |
+  | Latency and throughput | p50 5.5s, p95 9.6s, 0.64 rps | container BLAS lacks Apple AMX (~2.7s/req) | run on native Linux / quantise / batch |
+  | Resource utilisation | per pod ~3.8 CPU-cores, 450–580 MiB under load | CPU-bound; memory headroom unused | smaller token budget; INT8 weights |
+  | Reliability and recovery | cold-start median 6s; pod restored in 5s; rolling update zero-downtime | single node (no cross-machine HA) | multi-node cluster; PodDisruptionBudget |
+  | Security and cost | ₹12.54 / 1000 reqs; gitleaks: 0 findings; creds via Secret | billed on 4-CPU limit even when idle | right-size CPU limit; scale-to-zero |
