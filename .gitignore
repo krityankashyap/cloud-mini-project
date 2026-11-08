@@ -1,0 +1,27 @@
+# Secrets / credentials — NEVER commit
+.secrets/
+*.env
+!.github/**
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+.pytest_cache/
+.ruff_cache/
+
+# Model weights / artefacts (published as a GitHub Release asset, not committed)
+training/artifacts/
+*.safetensors
+*.bin
+*.pt
+model/
+*.tar.gz
+
+# Local scratch
+_kit_extract/
+.DS_Store
+
+# Load-test / local outputs that are regenerated (keep results/ tree via .gitkeep)
+results/loadtest*.csv
+results/loadtest_headers.json

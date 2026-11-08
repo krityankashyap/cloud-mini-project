@@ -1,0 +1,74 @@
+# Task 1 — two teacher-labelling workers in namespace "pipeline", different SHARD_INDEX.
+# Image "teacher-worker:latest" is built and imported into k3d by the Makefile.
+# Credentials come from the "s3-credentials" Secret (scripts/gen_secrets.sh).
+# The teacher (Ollama) runs on the laptop host, reachable from pods at host.k3d.internal.
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: pipeline
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: teacher-shard-0
+  namespace: pipeline
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: worker
+          image: teacher-worker:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: SHARD_INDEX, value: "0"}
+            - {name: SHARD_COUNT, value: "2"}
+            - {name: S3_ENDPOINT, value: "http://seaweedfs-s3.data.svc.cluster.local:8333"}
+            - {name: S3_BUCKET, value: "datasets"}
+            - {name: INPUT_KEY, value: "commands_pool.jsonl"}
+            - {name: OUTPUT_PREFIX, value: "teacher/"}
+            - {name: OLLAMA_HOST, value: "http://host.k3d.internal:11434"}
+            - {name: TEACHER_MODEL, value: "phi3.5"}
+            - {name: TEACHER_TEMPERATURE, value: "0"}
+            - {name: TEACHER_SEED, value: "42"}
+            - name: S3_ACCESS_KEY
+              valueFrom: {secretKeyRef: {name: s3-credentials, key: S3_ACCESS_KEY}}
+            - name: S3_SECRET_KEY
+              valueFrom: {secretKeyRef: {name: s3-credentials, key: S3_SECRET_KEY}}
+          resources:
+            requests: {cpu: "100m", memory: "128Mi"}
+            limits: {cpu: "500m", memory: "256Mi"}
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: teacher-shard-1
+  namespace: pipeline
+spec:
+  backoffLimit: 2
+  template:
+    spec:
+      restartPolicy: OnFailure
+      containers:
+        - name: worker
+          image: teacher-worker:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - {name: SHARD_INDEX, value: "1"}
+            - {name: SHARD_COUNT, value: "2"}
+            - {name: S3_ENDPOINT, value: "http://seaweedfs-s3.data.svc.cluster.local:8333"}
+            - {name: S3_BUCKET, value: "datasets"}
+            - {name: INPUT_KEY, value: "commands_pool.jsonl"}
+            - {name: OUTPUT_PREFIX, value: "teacher/"}
+            - {name: OLLAMA_HOST, value: "http://host.k3d.internal:11434"}
+            - {name: TEACHER_MODEL, value: "phi3.5"}
+            - {name: TEACHER_TEMPERATURE, value: "0"}
+            - {name: TEACHER_SEED, value: "42"}
+            - name: S3_ACCESS_KEY
+              valueFrom: {secretKeyRef: {name: s3-credentials, key: S3_ACCESS_KEY}}
+            - name: S3_SECRET_KEY
+              valueFrom: {secretKeyRef: {name: s3-credentials, key: S3_SECRET_KEY}}
+          resources:
+            requests: {cpu: "100m", memory: "128Mi"}
+            limits: {cpu: "500m", memory: "256Mi"}

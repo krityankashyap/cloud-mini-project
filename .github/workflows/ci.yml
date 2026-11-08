@@ -1,0 +1,97 @@
+name: CI
+
+# Stages run in order: lint -> unit tests -> model evaluation (Release asset) -> quality gate.
+# A separate gitleaks job scans for secrets.
+#
+# The evaluation job downloads the student model from a GitHub Release. To demonstrate
+# the quality gate failing (Task 6, step 3), run this workflow via "Run workflow" with
+# model_source = untrained: the untrained Pythia-70M produces <95% JSON validity and the
+# gate fails.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      model_source:
+        description: "which model to evaluate"
+        type: choice
+        options: [release, untrained]
+        default: release
+      release_tag:
+        description: "GitHub Release tag holding the model asset"
+        default: model-v1
+      model_asset:
+        description: "model tarball asset name in the release"
+        default: pythia70m-student-v1.tar.gz
+
+env:
+  RELEASE_TAG: ${{ github.event.inputs.release_tag || 'model-v1' }}
+  MODEL_ASSET: ${{ github.event.inputs.model_asset || 'pythia70m-student-v1.tar.gz' }}
+  MODEL_SOURCE: ${{ github.event.inputs.model_source || 'release' }}
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install ruff==0.6.9
+      - run: ruff check .
+
+  test:
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - run: pip install pytest==8.3.3
+      - run: pytest -q tests/
+
+  evaluate:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11"}
+      - name: Install deps (CPU torch)
+        run: |
+          pip install torch==2.2.2 --index-url https://download.pytorch.org/whl/cpu
+          pip install transformers==4.44.2 tokenizers==0.19.1 numpy==1.26.4
+
+      - name: Fetch model
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p model
+          if [ "${MODEL_SOURCE}" = "untrained" ]; then
+            echo "Using UNTRAINED Pythia-70M (expected to FAIL the quality gate)"
+            echo "MODEL_DIR=EleutherAI/pythia-70m" >> "$GITHUB_ENV"
+          else
+            gh release download "${RELEASE_TAG}" --pattern "${MODEL_ASSET}" --dir .
+            tar -xzf "${MODEL_ASSET}" -C model
+            echo "MODEL_DIR=model" >> "$GITHUB_ENV"
+          fi
+
+      - name: Generate predictions
+        run: python training/predict.py --model "${MODEL_DIR}" --input data/validation.jsonl --out preds.jsonl
+
+      - name: Quality gate (json_validity >= 95%)
+        run: python tools/score.py preds.jsonl data/validation.jsonl --out results_ci.json --min-validity 95
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: score-report, path: results_ci.json}
+
+  gitleaks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with: {fetch-depth: 0}
+      - uses: gitleaks/gitleaks-action@v2
+        env:
+          GITHUB_TOKEN: ${{ github.token }}

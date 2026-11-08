@@ -1,0 +1,12 @@
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+exclude = [".venv", "training/artifacts", ".secrets"]
+
+[tool.ruff.lint]
+select = ["E", "F", "W"]
+# E402: module-level imports after sys.path tweaks in tests/scripts; E501: long lines handled by line-length
+ignore = ["E402"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

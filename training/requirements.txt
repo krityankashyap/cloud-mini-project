@@ -1,0 +1,9 @@
+# Task 2 training dependencies (CPU). Requires Python 3.11.
+# On Apple Silicon / macOS the default PyPI torch wheel is already CPU/MPS (no CUDA).
+torch==2.2.2
+transformers==4.44.2
+tokenizers==0.19.1
+numpy==1.26.4
+PyYAML==6.0.2
+boto3==1.34.162
+requests==2.32.3

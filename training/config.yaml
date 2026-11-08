@@ -1,0 +1,30 @@
+# Task 2 — student training configuration.
+# `make train` reads ONLY this file. `make train SUBSET=50` trains on the first 50 records.
+
+base_model: EleutherAI/pythia-70m
+train_file: datasets/v1/train.jsonl   # produced by worker/clean.py (first 1500 records are used)
+max_train_records: 1500               # project cap: no more than 1,500 training examples
+
+# --- the six required hyper-parameters (v1) ---
+seed: 42
+learning_rate: 0.0005
+batch_size: 8
+epochs: 3
+max_seq_length: 128
+
+# --- v2: a second version for Task 4 (another seed + one more epoch) ---
+v2:
+  seed: 123
+  epochs: 4
+
+# --- pinned library versions (must match training/requirements.txt) ---
+library_versions:
+  python: "3.11"
+  torch: "2.2.2"
+  transformers: "4.44.2"
+  tokenizers: "0.19.1"
+  numpy: "1.26.4"
+  pyyaml: "6.0.2"
+
+# prompt framing used to build each training example (and used identically at inference time)
+prompt_template: "Command: {command}\nJSON: "

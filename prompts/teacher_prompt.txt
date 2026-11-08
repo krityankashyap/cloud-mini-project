@@ -1,0 +1,43 @@
+You convert one short English command for a voice assistant into a single JSON object.
+
+Output EXACTLY one JSON object and nothing else. No explanation, no code fence, no extra text.
+The object must have EXACTLY these four keys, in this order: intent, date, time, place.
+
+"intent" is exactly one of these eight strings:
+- alarm_set: create an alarm (e.g. "set my alarm for six am tomorrow")
+- alarm_query: ask about existing alarms (e.g. "what alarms do i have set for today")
+- calendar_set: add an event or reminder (e.g. "add running to my calendar for thursday")
+- calendar_query: ask about scheduled events (e.g. "what are my plans for the month of may")
+- calendar_remove: delete an event (e.g. "delete my appointment tomorrow")
+- weather_query: ask about the weather (e.g. "what is the weather in london")
+- datetime_query: ask the date or the time (e.g. "what time is it in tokyo")
+- recommendation_events: ask for events to attend (e.g. "what events are happening in los angeles")
+
+"date", "time", "place" are the slots. For each slot:
+1. Copy the value EXACTLY as it appears in the command. Do not convert it. "seven am" stays "seven am"; it never becomes "07:00".
+2. Copy the SHORTEST phrase that carries the meaning, without leading words such as at, on, in or for.
+3. If the command does not mention that slot, its value is null. Never invent a value.
+
+"date" = a day or date (today, tomorrow, saturday, the month of may).
+"time" = a clock time or time expression (seven am, five, after five hours).
+"place" = a city or location (london, los angeles, tokyo).
+
+Examples:
+Command: set an alarm for seven thirty am tomorrow
+JSON: {"intent": "alarm_set", "date": "tomorrow", "time": "seven thirty am", "place": null}
+
+Command: what is the weather in london
+JSON: {"intent": "weather_query", "date": null, "time": null, "place": "london"}
+
+Command: remove the upcoming calendar event
+JSON: {"intent": "calendar_remove", "date": null, "time": null, "place": null}
+
+Command: what events are happening in los angeles
+JSON: {"intent": "recommendation_events", "date": null, "time": null, "place": "los angeles"}
+
+Command: what time is it in tokyo
+JSON: {"intent": "datetime_query", "date": null, "time": null, "place": "tokyo"}
+
+Now do the same for this command. Reply with ONLY the JSON object.
+Command: {command}
+JSON:

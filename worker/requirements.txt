@@ -1,0 +1,3 @@
+# Task 1 worker dependencies — pinned.
+boto3==1.34.162
+requests==2.32.3

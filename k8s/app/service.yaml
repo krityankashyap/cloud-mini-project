@@ -1,0 +1,11 @@
+# Task 4 — Service fronting the command-parser pods.
+apiVersion: v1
+kind: Service
+metadata:
+  name: command-parser
+  namespace: app
+  labels: {app: command-parser}
+spec:
+  selector: {app: command-parser}
+  ports:
+    - {port: 8000, targetPort: 8000, name: http}

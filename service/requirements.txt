@@ -1,0 +1,10 @@
+# Task 3 service dependencies — every version pinned.
+# NOTE: torch is installed separately in the Dockerfile from the CPU-only index
+#       (torch==2.2.2+cpu) to keep the image small; it is pinned there.
+fastapi==0.115.0
+uvicorn==0.30.6
+pydantic==2.9.2
+transformers==4.44.2
+tokenizers==0.19.1
+numpy==1.26.4
+boto3==1.34.162

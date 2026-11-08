@@ -1,0 +1,25 @@
+# k3d cluster definition (Task 1 / Task 4).
+# Create with:  k3d cluster create --config cluster/k3d.yaml
+# k3s ships Traefik (Ingress) and metrics-server (for the HPA) by default.
+apiVersion: k3d.io/v1alpha5
+kind: Simple
+metadata:
+  name: cloud-mini
+servers: 1          # one server node
+agents: 1           # one agent node (still a SINGLE physical laptop -> no cross-machine fault tolerance)
+image: rancher/k3s:v1.30.4-k3s1
+ports:
+  # Expose Traefik's HTTP port on the host so the load test can reach the Ingress
+  # at http://localhost:8080 (the standard marking command uses this host/port).
+  - port: 8080:80
+    nodeFilters:
+      - loadbalancer
+options:
+  k3d:
+    wait: true
+    timeout: "120s"
+  k3s:
+    nodeLabels:
+      - label: project=cloud-mini
+        nodeFilters:
+          - server:0
