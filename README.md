@@ -26,12 +26,16 @@ Sequence-level knowledge distillation of a command-parsing LLM (teacher **phi3.5
 # 1. Deploy the whole system (cluster + object storage + service)
 make up
 
-# 2. Upload a trained student model so the service becomes Ready
-make upload-model DIR=training/artifacts/v1 VER=v1
+# 2. Seed the models from the GitHub Releases so the service becomes Ready
+#    (fresh clone has no local weights; this fetches model-v1 / model-v2 into object storage)
+make seed-model
 
 # 3. Tear everything down
 make down
 ```
+
+> Three commands from a fresh clone. (If you trained locally instead, use
+> `make upload-model DIR=training/artifacts/v1 VER=v1` in place of `make seed-model`.)
 
 `make up` = create k3d cluster → build & import images → create Secrets →
 deploy SeaweedFS → create `datasets`/`models` buckets + upload `commands_pool.jsonl`

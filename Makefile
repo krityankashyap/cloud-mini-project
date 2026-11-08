@@ -24,7 +24,7 @@ NS_DATA      := data
 
 .PHONY: help up down cluster cluster-delete images secrets storage wait-storage \
         buckets deploy-app label clean-data venv toolvenv train train-v2 \
-        predict-student predict-untrained score-all port-forward-% nacl test lint
+        upload-model seed-model predict-student predict-untrained score-all nacl test lint
 
 help:
 	@grep -E '^[a-zA-Z0-9_-]+:.*?#' $(MAKEFILE_LIST) | sed 's/:.*#/\t-/' | sort
@@ -34,8 +34,8 @@ help:
 # ---------------------------------------------------------------------------
 up: cluster images secrets storage wait-storage buckets deploy-app   ## Build + deploy the whole system
 	@echo ""
-	@echo "System deployed. Upload a trained model to models/v1 (make upload-model DIR=training/artifacts/v1),"
-	@echo "then the service pods will become Ready. Test:  curl -s -X POST localhost:8080/parse -d '{\"text\":\"what is the weather in london\"}'"
+	@echo "System deployed. Now seed the models so the service becomes Ready:  make seed-model"
+	@echo "Then test:  curl -s -X POST localhost:8080/parse -d '{\"text\":\"what is the weather in london\"}'"
 
 down: cluster-delete   ## Delete the k3d cluster
 
@@ -82,6 +82,21 @@ buckets: toolvenv   ## Create datasets + models buckets and upload commands_pool
 upload-model: toolvenv   ## Upload a local model dir to object storage. usage: make upload-model DIR=training/artifacts/v1 VER=v1
 	@test -n "$(DIR)" || (echo "set DIR=training/artifacts/v1"; exit 1)
 	@$(call with_s3, $(TOOL_PY) scripts/storage.py upload-dir $(DIR) models $(or $(VER),v1))
+
+seed-model: toolvenv   ## Fresh-clone deploy: fetch released v1/v2 models from GitHub Releases into object storage
+	@set -e; for v in v1 v2; do \
+	  asset=pythia70m-student-$$v.tar.gz; \
+	  rm -rf /tmp/seed_$$v /tmp/$$asset && mkdir -p /tmp/seed_$$v; \
+	  gh release download model-$$v --pattern $$asset --dir /tmp --clobber \
+	    || { echo "ERROR: could not download $$asset from release model-$$v"; exit 1; }; \
+	  tar -xzf /tmp/$$asset -C /tmp/seed_$$v; \
+	done
+	@$(call with_s3, \
+	  $(TOOL_PY) scripts/storage.py upload-dir /tmp/seed_v1 models v1 --no-sha; \
+	  $(TOOL_PY) scripts/storage.py write-sha256 /tmp/pythia70m-student-v1.tar.gz models v1/model.sha256; \
+	  $(TOOL_PY) scripts/storage.py upload-dir /tmp/seed_v2 models v2 --no-sha; \
+	  $(TOOL_PY) scripts/storage.py write-sha256 /tmp/pythia70m-student-v2.tar.gz models v2/model.sha256)
+	kubectl -n app rollout restart deploy/command-parser 2>/dev/null || true
 
 deploy-app:   ## Deploy the service: Deployment, Service, Ingress, HPA
 	kubectl apply -f k8s/app/deployment.yaml

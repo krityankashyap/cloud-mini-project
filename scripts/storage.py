@@ -50,9 +50,10 @@ def main():
     sub = ap.add_subparsers(dest="cmd", required=True)
     p = sub.add_parser("create-buckets"); p.add_argument("buckets", nargs="+")
     p = sub.add_parser("upload-file"); p.add_argument("local"); p.add_argument("bucket"); p.add_argument("key")
-    p = sub.add_parser("upload-dir"); p.add_argument("localdir"); p.add_argument("bucket"); p.add_argument("prefix")
+    p = sub.add_parser("upload-dir"); p.add_argument("localdir"); p.add_argument("bucket"); p.add_argument("prefix"); p.add_argument("--no-sha", action="store_true")
     p = sub.add_parser("download-dir"); p.add_argument("bucket"); p.add_argument("prefix"); p.add_argument("localdir")
     p = sub.add_parser("sha256-dir"); p.add_argument("localdir")
+    p = sub.add_parser("write-sha256"); p.add_argument("localfile"); p.add_argument("bucket"); p.add_argument("key")
     a = ap.parse_args()
 
     if a.cmd == "sha256-dir":
@@ -79,10 +80,19 @@ def main():
                 key = f"{prefix}/{rel}"
                 s3.upload_file(full, a.bucket, key)
                 print(f"uploaded {rel} -> s3://{a.bucket}/{key}")
-        digest = dir_sha256(a.localdir)
-        body = f"{digest}  {prefix}\n".encode("utf-8")
-        s3.put_object(Bucket=a.bucket, Key=f"{prefix}/model.sha256", Body=body)
-        print(f"wrote s3://{a.bucket}/{prefix}/model.sha256 = {digest}")
+        if not a.no_sha:
+            digest = dir_sha256(a.localdir)
+            body = f"{digest}  {prefix}\n".encode("utf-8")
+            s3.put_object(Bucket=a.bucket, Key=f"{prefix}/model.sha256", Body=body)
+            print(f"wrote s3://{a.bucket}/{prefix}/model.sha256 = {digest}")
+    elif a.cmd == "write-sha256":
+        h = hashlib.sha256()
+        with open(a.localfile, "rb") as f:
+            for chunk in iter(lambda: f.read(1 << 20), b""):
+                h.update(chunk)
+        body = f"{h.hexdigest()}  {os.path.basename(a.localfile)}\n".encode("utf-8")
+        s3.put_object(Bucket=a.bucket, Key=a.key, Body=body)
+        print(f"wrote s3://{a.bucket}/{a.key} = {h.hexdigest()}")
     elif a.cmd == "download-dir":
         prefix = a.prefix.rstrip("/") + "/"
         os.makedirs(a.localdir, exist_ok=True)
