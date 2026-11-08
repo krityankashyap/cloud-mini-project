@@ -1,10 +1,10 @@
 # Cloud Computing Mini Project — Report
 
-> Draft to be exported to `report/report.pdf` (≤ 8 pages). One section per task.
-> **Measured results** (filled from `results/`) are kept separate from **assumptions**.
-> Replace every `MEASURED:` placeholder with the real number from your run.
+> One section per task; all numbers are measured (evidence in `results/`).
+> **TODO before submission:** fill name/roll below and export this file to
+> `report/report.pdf` (≤ 8 pages), e.g. `pandoc report/report.md -o report/report.pdf`.
 
-**Name / Roll number:** ______   **GitHub:** ______
+**Name / Roll number:** ______   **GitHub:** https://github.com/krityankashyap/cloud-mini-project
 
 ---
 
