@@ -54,7 +54,10 @@ def main():
             prompt = template.replace("{command}", g["text"])
             r = requests.post(f"{a.host.rstrip('/')}/api/generate",
                               json={"model": a.model, "prompt": prompt, "stream": False,
-                                    "options": {"temperature": 0, "seed": 42}}, timeout=300)
+                                    "options": {"temperature": 0, "seed": 42,
+                                                "num_predict": 80,
+                                                "stop": ["\n", "\nCommand:", "Command:"]}},
+                              timeout=300)
             r.raise_for_status()
             prediction = extract_json(r.json()["response"].strip())
             fout.write(json.dumps({"id": g["id"], "prediction": prediction}, ensure_ascii=False) + "\n")

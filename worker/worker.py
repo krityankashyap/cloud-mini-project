@@ -95,7 +95,15 @@ def ask_teacher(host, model, template, command, temperature, seed):
             "model": model,
             "prompt": prompt,
             "stream": False,
-            "options": {"temperature": temperature, "seed": seed},
+            # The reply is a single-line JSON object. Cap the output and stop at the
+            # first newline / next "Command:" so the model cannot ramble on for
+            # hundreds of tokens (which made CPU labelling intractably slow).
+            "options": {
+                "temperature": temperature,
+                "seed": seed,
+                "num_predict": int(os.environ.get("TEACHER_NUM_PREDICT", "80")),
+                "stop": ["\n", "\nCommand:", "Command:"],
+            },
         },
         timeout=300,
     )
