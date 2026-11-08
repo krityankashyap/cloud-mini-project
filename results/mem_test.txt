@@ -1,0 +1,55 @@
+container started at --cpus=1 --memory=1g
+ready after ~8s
+req 1: HTTP 200  mem=471.5MiB
+req 2: HTTP 200  mem=471.5MiB
+req 3: HTTP 200  mem=471.5MiB
+req 4: HTTP 200  mem=471.5MiB
+req 5: HTTP 200  mem=471.5MiB
+req 6: HTTP 200  mem=471.6MiB
+req 7: HTTP 200  mem=471.6MiB
+req 8: HTTP 200  mem=471.6MiB
+req 9: HTTP 200  mem=471.6MiB
+req 10: HTTP 200  mem=471.6MiB
+req 11: HTTP 200  mem=471.6MiB
+req 12: HTTP 200  mem=471.6MiB
+req 13: HTTP 200  mem=471.6MiB
+req 14: HTTP 200  mem=471.6MiB
+req 15: HTTP 200  mem=471.6MiB
+req 16: HTTP 200  mem=471.6MiB
+req 17: HTTP 200  mem=471.6MiB
+req 18: HTTP 200  mem=471.6MiB
+req 19: HTTP 200  mem=471.6MiB
+req 20: HTTP 200  mem=471.7MiB
+req 21: HTTP 200  mem=471.9MiB
+req 22: HTTP 200  mem=476.9MiB
+req 23: HTTP 200  mem=485.9MiB
+req 24: HTTP 200  mem=489.3MiB
+req 25: HTTP 200  mem=491.2MiB
+req 26: HTTP 200  mem=498.9MiB
+req 27: HTTP 200  mem=505.9MiB
+req 28: HTTP 200  mem=506.4MiB
+req 29: HTTP 200  mem=506.4MiB
+req 30: HTTP 200  mem=506.4MiB
+req 31: HTTP 200  mem=506.4MiB
+req 32: HTTP 200  mem=506.4MiB
+req 33: HTTP 200  mem=506.4MiB
+req 34: HTTP 200  mem=506.4MiB
+req 35: HTTP 200  mem=506.4MiB
+req 36: HTTP 200  mem=506.4MiB
+req 37: HTTP 200  mem=506.4MiB
+req 38: HTTP 200  mem=506.4MiB
+req 39: HTTP 200  mem=506.4MiB
+req 40: HTTP 200  mem=506.4MiB
+req 41: HTTP 200  mem=506.4MiB
+req 42: HTTP 200  mem=506.4MiB
+req 43: HTTP 200  mem=506.4MiB
+req 44: HTTP 200  mem=506.4MiB
+req 45: HTTP 200  mem=506.4MiB
+req 46: HTTP 200  mem=506.4MiB
+req 47: HTTP 200  mem=506.4MiB
+req 48: HTTP 200  mem=506.4MiB
+req 49: HTTP 200  mem=506.4MiB
+req 50: HTTP 200  mem=506.4MiB
+
+=== Task 3 result: 50/50 succeeded, PEAK MEMORY = 506 MiB (limit 1024 MiB), no OOM ===
+OOMKilled=false Status=running

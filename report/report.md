@@ -57,8 +57,9 @@ distillation targets to fine-tune **pythia-70m**. The student is stored in
 ## Task 3 — Inference service
 - Endpoints `/parse`, `/healthz`, `/readyz`; headers `X-Model-Version`, `X-Served-By`.
 - `FAULT_INJECT=1` → HTTP 500 `{"error":"invalid_model_output"}` (verified).
-- Image size: **1.2 GB** (CPU-only torch, no weights; ≤ 2 GB). Peak memory @ 1 CPU / 1 GiB
-  over 50 sequential requests: MEASURED MiB (evidence in `results/`).
+- Image size: **1.2 GB** (CPU-only torch, no weights; ≤ 2 GB). 50 sequential requests
+  @ `--cpus=1 --memory=1g`: **50/50 succeeded, peak memory 506 MiB**, no OOM kill
+  (`results/mem_test.txt`).
 - Verified live through the Ingress: `what is the weather in london` →
   `{"intent":"weather_query","date":null,"time":null,"place":"london"}` with headers
   `X-Model-Version: v1`, `X-Served-By: <pod>`.
