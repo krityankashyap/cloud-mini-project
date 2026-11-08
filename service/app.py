@@ -60,6 +60,9 @@ VALID_INTENTS = set(SCHEMA["intents"])
 
 app = FastAPI()
 _state = {"ready": False, "model": None, "tokenizer": None}
+# Serialize generation within a pod: each CPU-bound request then gets the full thread
+# budget instead of N concurrent requests thrashing TORCH_THREADS*N threads on the CPU.
+_gen_lock = threading.Lock()
 
 
 class ParseRequest(BaseModel):
@@ -105,7 +108,7 @@ def _startup():
 def _generate(text):
     tok, model = _state["tokenizer"], _state["model"]
     ids = tok(TEMPLATE.format(command=text), return_tensors="pt")
-    with torch.no_grad():
+    with _gen_lock, torch.no_grad():
         out = model.generate(**ids, max_new_tokens=MAX_NEW_TOKENS, do_sample=False,
                              pad_token_id=tok.pad_token_id, eos_token_id=tok.eos_token_id)
     return tok.decode(out[0][ids["input_ids"].shape[1]:], skip_special_tokens=True)
