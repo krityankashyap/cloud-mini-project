@@ -48,6 +48,11 @@ FAULT_INJECT = os.environ.get("FAULT_INJECT", "0") == "1"
 POD_NAME = os.environ.get("POD_NAME") or socket.gethostname()
 MODEL_DIR = os.environ.get("MODEL_DIR", "/tmp/model")
 
+# Pin torch threads to the container's CPU budget. Inside a cgroup-limited container
+# torch otherwise sees ALL host cores and spawns that many threads, which thrash
+# against a 1-CPU limit (observed ~20s/request vs ~1s when pinned to 1 thread).
+torch.set_num_threads(int(os.environ.get("TORCH_THREADS", "1")))
+
 # schema baked into the image (used to validate every model output)
 with open(os.environ.get("SCHEMA_PATH", "schema.json"), encoding="utf-8") as _f:
     SCHEMA = json.load(_f)

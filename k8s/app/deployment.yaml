@@ -36,6 +36,10 @@ spec:
             - {name: MAX_NEW_TOKENS, value: "64"}
             - {name: FAULT_INJECT, value: "0"}
             - {name: SCHEMA_PATH, value: "/app/schema.json"}
+            # Pin torch threads to the CPU budget. The Linux aarch64 torch wheel uses a
+            # generic BLAS (no Apple AMX), so inference is compute-bound; 4 threads on a
+            # 4-CPU limit keeps p95 well under the 5s target.
+            - {name: TORCH_THREADS, value: "4"}
             - name: POD_NAME
               valueFrom: {fieldRef: {fieldPath: metadata.name}}
             - name: S3_ACCESS_KEY
@@ -43,8 +47,8 @@ spec:
             - name: S3_SECRET_KEY
               valueFrom: {secretKeyRef: {name: s3-credentials, key: S3_SECRET_KEY}}
           resources:
-            requests: {cpu: "250m", memory: "512Mi"}
-            limits: {cpu: "1", memory: "1Gi"}
+            requests: {cpu: "500m", memory: "512Mi"}
+            limits: {cpu: "4", memory: "1Gi"}
           livenessProbe:
             httpGet: {path: /healthz, port: 8000}
             initialDelaySeconds: 30
