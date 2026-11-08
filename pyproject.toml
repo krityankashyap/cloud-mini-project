@@ -1,12 +1,15 @@
 [tool.ruff]
 line-length = 120
 target-version = "py311"
-exclude = [".venv", "training/artifacts", ".secrets"]
+# tools/ holds the provided kit scripts (score.py, nacl_sim.py, locustfile.py) — not ours to lint.
+exclude = [".venv", ".toolvenv", "training/artifacts", ".secrets", "tools"]
 
 [tool.ruff.lint]
 select = ["E", "F", "W"]
-# E402: module-level imports after sys.path tweaks in tests/scripts; E501: long lines handled by line-length
-ignore = ["E402"]
+# Keep real-error checks (F). Relax a few style nits:
+#   E402 imports after sys.path tweaks; E501 long lines; E702 compact argparse;
+#   E741 "l" as a line variable in comprehensions.
+ignore = ["E402", "E501", "E702", "E741"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
