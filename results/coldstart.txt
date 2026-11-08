@@ -1,0 +1,7 @@
+# Cold-start measurement: delete all app pods, time creation -> Ready (3 runs)
+run command-parser-798bd5647c-kczfc: cold-start = 5s
+run command-parser-798bd5647c-mqp72: cold-start = 6s
+run command-parser-798bd5647c-ncssf: cold-start = 11s
+--- model download log evidence (from a fresh pod) ---
+[service] model v1 loaded from s3://models/v1
+[service] model v1 loaded from s3://models/v1

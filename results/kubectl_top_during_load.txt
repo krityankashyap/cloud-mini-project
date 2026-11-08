@@ -1,0 +1,5 @@
+# kubectl top pods -n app, sampled during the standard load test
+# Sun Nov  8 22:18:25 IST 2026
+NAME                              CPU(cores)   MEMORY(bytes)   
+command-parser-64dd444bb4-ggk4n   3848m        448Mi           
+command-parser-64dd444bb4-nxlmv   3845m        578Mi           

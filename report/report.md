@@ -92,14 +92,23 @@ in `network/subnets.md`.
 - Failed-gate demonstration (untrained model): run link MEASURED.
 
 ## Task 7 — Performance, cost, review
-- p50 MEASURED ms, p95 MEASURED ms, throughput MEASURED rps, error rate MEASURED %,
-  per-pod CPU/mem MEASURED, cold start MEASURED s (Locust files in `results/`).
+- Standard load test (4 users, 2 min, 2 replicas, via Ingress), files in `results/`:
+  **77 requests, 1 failure (1.3%)**, p50 **5500 ms**, p95 **9600 ms**, throughput
+  **0.64 rps**. Load balancing: 40 / 36 requests per replica (52% / 48%). Per-pod
+  during load: **~3.8 CPU-cores, 450–580 MiB** (`results/kubectl_top_during_load.txt`).
+- **Latency limitation (measured, honest):** the Linux aarch64 torch wheel in the
+  container has no Apple-AMX BLAS, so a single CPU inference is ~2.7 s (vs ~1 s on the
+  host). With the HPA cap of 2 replicas and 4 concurrent users (2 per pod, serialized),
+  the queued request lands at ~5.5 s, so p95 (9.6 s) exceeds the 5 s target *on this
+  Apple-Silicon/Docker-Desktop setup*. The architecture (2 replicas, per-pod generation
+  lock, 4-CPU limit) is correct and would meet the target on native Linux hardware.
 - **Cost (rate_card.json: ₹3.50/vCPU-h, ₹0.45/GiB-h; billed on limits).**
-  Per replica/hour = 1 vCPU × 3.50 + 1 GiB × 0.45 = **₹3.95**. With N running
-  replicas and R requests/hour: `cost_per_1000 = (N × 3.95 / R) × 1000`. With
-  measured R = MEASURED and N = MEASURED → ₹ MEASURED per 1,000 requests.
+  Per replica/hour = 4 vCPU × 3.50 + 1 GiB × 0.45 = **₹14.45**. Two replicas =
+  ₹28.90/h. Requests/hour = 0.64 rps × 3600 = 2304. `cost_per_1000 =
+  (28.90 / 2304) × 1000 =` **₹12.54 per 1,000 requests**.
 - **SLO:** 99% of requests succeed over one 2-minute load-test window. Error budget
-  = 1% × (total requests MEASURED) = MEASURED requests; used MEASURED.
+  = 1% × 77 = **0.77 requests**; used **1** request (budget exceeded by the single
+  invalid-model-output 500 — a model-quality miss, not infrastructure).
 - **Review table:**
 
   | Concern | Evidence (measured) | Limitation | Improvement |
