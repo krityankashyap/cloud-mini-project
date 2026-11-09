@@ -1,5 +1,8 @@
 # Cloud Computing Mini Project — Command-Parser Distillation & Deployment
 
+**GitHub repository:** https://github.com/krityankashyap/cloud-mini-project
+**Model artefacts (GitHub Releases):** [model-v1](https://github.com/krityankashyap/cloud-mini-project/releases/tag/model-v1) · [model-v2](https://github.com/krityankashyap/cloud-mini-project/releases/tag/model-v2)
+
 Sequence-level knowledge distillation of a command-parsing LLM (teacher **phi3.5**
 → student **EleutherAI/pythia-70m**), deployed as an inference service on a local
 **k3d** Kubernetes cluster with **SeaweedFS** object storage.
