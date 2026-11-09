@@ -1,10 +1,9 @@
 # Cloud Computing Mini Project — Report
 
 > One section per task; all numbers are measured (evidence in `results/`).
-> **TODO before submission:** fill name/roll below and export this file to
-> `report/report.pdf` (≤ 8 pages), e.g. `pandoc report/report.md -o report/report.pdf`.
+> Measured results are stated as such; assumptions/estimates are labelled.
 
-**Name / Roll number:** ______   **GitHub:** https://github.com/krityankashyap/cloud-mini-project
+**Name:** Krityan Kashyap   **Roll number:** 230103013   **GitHub:** https://github.com/krityankashyap/cloud-mini-project
 
 ---
 
